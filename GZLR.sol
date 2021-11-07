@@ -640,7 +640,7 @@ contract GZLR is Context, IERC20, Ownable {
     }
     
     function updateFees(uint256 taxFee, uint256 liquidityFee, uint256 marketingFee) external onlyOwner {
-        uint _totalFees = taxFee + liquidityFee + marketingFee;
+        uint256 _totalFees = taxFee + liquidityFee + marketingFee;
         require(_totalFees <=15, "Must Keep Fees at 15% or less" );
 
         _taxFee = taxFee;
