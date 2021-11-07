@@ -938,8 +938,6 @@ contract GZLR is Context, IERC20, Ownable {
         takeTransactionFee(address(this), tLiquidity, currentRate);
         _reflectFee(rFee, tFee);
         emit Transfer(sender, recipient, tTransferAmount);
-    }
-    
-    
+    }    
 
 }
