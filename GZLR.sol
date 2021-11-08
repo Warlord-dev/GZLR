@@ -755,7 +755,6 @@ contract GZLR is Context, IERC20, Ownable {
     
     function takeTransactionFee(address to, uint256 tAmount, uint256 currentRate) private {
         if (tAmount <= 0) { return; }
-        uint256 currentRate =  _getRate();
 
         uint256 rAmount = tAmount.mul(currentRate);
         _rOwned[to] = _rOwned[to].add(rAmount);
