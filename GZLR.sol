@@ -466,7 +466,7 @@ contract GZLR is Context, IERC20, Ownable {
     
     uint256 public  _maxTxAmount     = 100 * 10**9 * 10**18;
     uint256 private _minTokenBalance = 300000 * 10**18;
-    uint256 public  _maxWalletSize = 100 * 10**9 * 10**18;
+    uint256 public  _maxWalletSize = 10**9 * 10**18;
 
     // auto liquidity
     bool public _swapAndLiquifyEnabled = true;
