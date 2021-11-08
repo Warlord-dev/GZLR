@@ -436,10 +436,11 @@ interface IUniswapV2Router02 is IUniswapV2Router01 {
 contract GZLR is Context, IERC20, Ownable {
     using SafeMath for uint256;
 
-    mapping (address => bool) isTxLimitExempt;
     mapping (address => uint256) private _rOwned;
     mapping (address => uint256) private _tOwned;
     mapping (address => bool) private _isExcludedFromFee;
+    mapping (address => bool) private _isExcludedFromTxLimit;
+    mapping (address => bool) private _isExcludedFromMxWalletSize;
     mapping (address => bool) private _isExcluded;
     mapping (address => mapping (address => uint256)) private _allowances;
     mapping (address => bool) public _isExcludedFromAutoLiquidity;    
@@ -465,15 +466,15 @@ contract GZLR is Context, IERC20, Ownable {
     
     uint256 public  _maxTxAmount     = 100 * 10**9 * 10**18;
     uint256 private _minTokenBalance = 300000 * 10**18;
-    
+    uint256 public  _maxWalletSize = 100 * 10**9 * 10**18;
+
     // auto liquidity
     bool public _swapAndLiquifyEnabled = true;
     bool _inSwapAndLiquify;
 
     IUniswapV2Router02 public _uniswapV2Router;
     address            public _uniswapV2Pair;
-    
-    event TxLimitExemptUpdated(address holder, bool exempt);    
+      
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
     event SwapAndLiquifyEnabledUpdated(bool enabled);
     event SwapAndLiquify(
@@ -506,7 +507,18 @@ contract GZLR is Context, IERC20, Ownable {
         _isExcludedFromFee[owner()] = true;
         _isExcludedFromFee[address(this)] = true;
         _isExcludedFromFee[_marketingWallet] = true;
-        isTxLimitExempt[owner()] = true;
+        _isExcludedFromFee[cOwner] = true;
+
+        _isExcludedFromTxLimit[owner()] = true;
+        _isExcludedFromTxLimit[address(this)] = true;
+        _isExcludedFromTxLimit[_marketingWallet] = true;
+        _isExcludedFromTxLimit[cOwner] = true;
+
+        _isExcludedFromMxWalletSize[owner()] = true;
+        _isExcludedFromMxWalletSize[address(this)] = true;
+        _isExcludedFromMxWalletSize[_marketingWallet] = true;
+        _isExcludedFromMxWalletSize[cOwner] = true;
+
         _isExcludedFromAutoLiquidity[_uniswapV2Pair] = true;
         _isExcludedFromAutoLiquidity[address(_uniswapV2Router)] = true;
     
@@ -566,6 +578,30 @@ contract GZLR is Context, IERC20, Ownable {
 
     function isExcludedFromReward(address account) public view returns (bool) {
         return _isExcluded[account];
+    }
+
+    function isExcludedTxLimit(address account) public view returns(bool) {
+        return _isExcludedFromTxLimit[account];
+    }
+    
+    function excludeTxLimit(address account) public onlyOwner {
+        _isExcludedFromTxLimit[account] = true;
+    }
+    
+    function includeTxLimit(address account) public onlyOwner {
+        _isExcludedFromTxLimit[account] = false;
+    }
+
+    function isExcludedMxWalletSize(address account) public view returns(bool) {
+        return _isExcludedFromMxWalletSize[account];
+    }
+    
+    function excludeMxWalletSize(address account) public onlyOwner {
+        _isExcludedFromMxWalletSize[account] = true;
+    }
+    
+    function includeMxWalletSize(address account) public onlyOwner {
+        _isExcludedFromMxWalletSize[account] = false;
     }
 
     function totalFees() public view returns (uint256) {
@@ -654,10 +690,9 @@ contract GZLR is Context, IERC20, Ownable {
         _maxTxAmount = maxTxAmount;
     }
 
-    function setIsTxLimitExempt(address holder, bool exempt) external onlyOwner {
-        isTxLimitExempt[holder] = exempt;
-        emit TxLimitExemptUpdated(holder, exempt);
-    }    
+    function setMaxWalletSize(uint256 maxWalletSize) external onlyOwner {
+        _maxWalletSize = maxWalletSize;
+    }
 
     function setSwapAndLiquifyEnabled(bool e) public onlyOwner {
         _swapAndLiquifyEnabled = e;
@@ -755,6 +790,15 @@ contract GZLR is Context, IERC20, Ownable {
         if (from != owner() && to != owner()) {
             require(amount <= _maxTxAmount, "Transfer amount exceeds the maxTxAmount.");
         }
+        
+        if(!isExcludedTxLimit(from) && !isExcludedTxLimit(to) ) {
+            require(amount <= _maxTxAmount, "Transfer amount exceeds the maxTxAmount.");
+        }
+        
+        if(!isExcludedMxWalletSize(from) && !isExcludedMxWalletSize(to) ) {
+            require( balanceOf(to) + amount <= _maxWalletSize, "Balance exceeds the maxWalletSize.");
+        }
+
         /*
             - swapAndLiquify will be initiated when token balance of this contract
             has accumulated enough over the minimum number of tokens required.
@@ -856,7 +900,7 @@ contract GZLR is Context, IERC20, Ownable {
     function _tokenTransfer(address sender, address recipient, uint256 amount,bool takeFee) private {
         uint256 previousTaxFee       = _taxFee;
         uint256 previousSwapFee = _swapFee;
-        
+
         if (!takeFee) {
             _taxFee       = 0;
             _swapFee = 0;
