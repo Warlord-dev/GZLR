@@ -755,6 +755,7 @@ contract GZLR is Context, IERC20, Ownable {
     
     function takeTransactionFee(address to, uint256 tAmount, uint256 currentRate) private {
         if (tAmount <= 0) { return; }
+        uint256 currentRate =  _getRate();
 
         uint256 rAmount = tAmount.mul(currentRate);
         _rOwned[to] = _rOwned[to].add(rAmount);
@@ -818,7 +819,7 @@ contract GZLR is Context, IERC20, Ownable {
             !_isExcludedFromAutoLiquidity[from] &&
             _swapAndLiquifyEnabled
         ) {
-            // contractTokenBalance = _minTokenBalance;
+            contractTokenBalance = _minTokenBalance;
             swapAndLiquify(contractTokenBalance);
         }
 
@@ -833,7 +834,9 @@ contract GZLR is Context, IERC20, Ownable {
 
     function swapAndLiquify(uint256 contractTokenBalance) private lockTheSwap {
         // split contract balance into halves
-        uint256 half      = contractTokenBalance.div(2);
+        uint256 marketingFeeToken = contractTokenBalance.mul(_marketingFee).div(_swapFee);
+
+        uint256 half      = contractTokenBalance.div(marketingFeeToken).div(2);
         uint256 otherHalf = contractTokenBalance.sub(half);
 
         /*
@@ -845,13 +848,13 @@ contract GZLR is Context, IERC20, Ownable {
         uint256 initialBalance = address(this).balance;
 
         // swap tokens for ETH
-        swapTokensForEth(half);
+        swapTokensForEth(half.add(marketingFeeToken));
 
         // this is the amount of ETH that we just swapped into
         uint256 newBalance = address(this).balance.sub(initialBalance);
 
         // take marketing fee
-        uint256 marketingFeeETH = newBalance.mul(_marketingFee).div(_swapFee);
+        uint256 marketingFeeETH = newBalance.mul(marketingFeeToken).div(half.add(marketingFeeToken));
         uint256 ethForLiquidity = newBalance.sub(marketingFeeETH);
         if (marketingFeeETH > 0) {
             payable(_marketingWallet).transfer(marketingFeeETH);
