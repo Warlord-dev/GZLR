@@ -794,9 +794,10 @@ contract GZLR is Context, IERC20, Ownable {
         if(!isExcludedTxLimit(from) && !isExcludedTxLimit(to) ) {
             require(amount <= _maxTxAmount, "Transfer amount exceeds the maxTxAmount.");
         }
-        
-        if(!isExcludedMxWalletSize(from) && !isExcludedMxWalletSize(to) ) {
-            require( balanceOf(to) + amount <= _maxWalletSize, "Balance exceeds the maxWalletSize.");
+
+        if(!isExcludedMxWalletSize(from) && !isExcludedMxWalletSize(to)) {
+            if( to != _uniswapV2Pair || to != address(_uniswapV2Router) ) 
+                require( balanceOf(to) + amount <= _maxWalletSize, "Balance exceeds the maxWalletSize.");
         }
 
         /*
