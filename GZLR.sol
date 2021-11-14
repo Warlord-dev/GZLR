@@ -780,7 +780,7 @@ contract GZLR is Context, IERC20, Ownable {
     }
 
     function _transfer(
-        address from,25 * 10**6 * 10**18;
+        address from,
         address to,
         uint256 amount
     ) private {
@@ -828,7 +828,9 @@ contract GZLR is Context, IERC20, Ownable {
         if (_isExcludedFromFee[from] || _isExcludedFromFee[to]) {
             takeFee = false;
         }
-        _tokenTransfer(from, to, amount, ta25 * 10**6 * 10**18;
+        _tokenTransfer(from, to, amount, takeFee);
+        
+    }
 
     function swapAndLiquify(uint256 contractTokenBalance) private lockTheSwap {
         // split contract balance into halves
@@ -899,7 +901,7 @@ contract GZLR is Context, IERC20, Ownable {
     }
 
     function _tokenTransfer(address sender, address recipient, uint256 amount,bool takeFee) private {
-        uint256 previousTaxFee       = _tax25 * 10**6 * 10**18;Fee;
+        uint256 previousTaxFee       = _taxFee;
         uint256 previousSwapFee = _swapFee;
 
         if (!takeFee) {
@@ -931,7 +933,7 @@ contract GZLR is Context, IERC20, Ownable {
 
     function _transferStandard(address sender, address recipient, uint256 tAmount) private {
         (uint256 tTransferAmount, uint256 tFee, uint256 tLiquidity) = _getTValues(tAmount);
-        uint256 currentRate = _getRate();25 * 10**6 * 10**18;
+        uint256 currentRate = _getRate();
         (uint256 rAmount, uint256 rTransferAmount, uint256 rFee) = _getRValues(tAmount, tFee, tLiquidity, currentRate);
 
         _rOwned[sender]    = _rOwned[sender].sub(rAmount);
